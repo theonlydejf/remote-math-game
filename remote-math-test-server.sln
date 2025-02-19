@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "remote-math-test-server", "remote-math-test-server\remote-math-test-server.csproj", "{AABB8B28-78BA-422D-ABE2-18B949538210}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "remote-math-test-client", "remote-math-test-client\remote-math-test-client.csproj", "{3C3EC65F-A6E6-4403-A707-9B25094D8F05}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AABB8B28-78BA-422D-ABE2-18B949538210}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AABB8B28-78BA-422D-ABE2-18B949538210}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AABB8B28-78BA-422D-ABE2-18B949538210}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AABB8B28-78BA-422D-ABE2-18B949538210}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C3EC65F-A6E6-4403-A707-9B25094D8F05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C3EC65F-A6E6-4403-A707-9B25094D8F05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C3EC65F-A6E6-4403-A707-9B25094D8F05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C3EC65F-A6E6-4403-A707-9B25094D8F05}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
