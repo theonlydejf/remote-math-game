@@ -8,81 +8,70 @@ using System.Threading.Tasks;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
 
 class Program
 {
-    static object ConsoleOutputLock = new object();
+    private const int Port = 12345;
+    private const int GameDurationSeconds = 10;
 
     static async Task Main(string[] args)
     {
-
-        var cts = new CancellationTokenSource();
-        var listener = new TcpListener(IPAddress.Any, 1223);
+        TcpListener listener = new TcpListener(IPAddress.Any, Port);
         listener.Start();
-        Console.WriteLine("Server started...");
+        Console.WriteLine($"Server started on port {Port}.");
 
-        while (!cts.Token.IsCancellationRequested)
+        while (true)
         {
-            TcpClient acceptedClient = await listener.AcceptTcpClientAsync();
-
-            var clientEndpoint = acceptedClient.Client.RemoteEndPoint as IPEndPoint;
-            string? clientIp = clientEndpoint?.Address.ToString();
-
-            lock (ConsoleOutputLock)
-            {
-                if (clientIp == null)
-                {
-                    Console.WriteLine("Client without IP connected :o, discarding...");
-                    continue;
-                }
-
-                _ = HandleClientAsync(acceptedClient, cts.Token);
-
-                Console.WriteLine($"Client connected: {clientIp}");
-            }
+            TcpClient client = await listener.AcceptTcpClientAsync();
+            _ = HandleClientAsync(client);
         }
-
-        listener.Stop();
     }
 
-    private static void DiscardClient(TcpClient client)
+    private static async Task HandleClientAsync(TcpClient client)
     {
-        StreamWriter sw = new StreamWriter(client.GetStream());
-        sw.WriteLine("Client with the same IP is already connected!");
-        client.Close();
-    }
-
-    private static async Task HandleClientAsync(TcpClient client, CancellationToken token)
-    {
+        Console.WriteLine("Client connected.");
         using (client)
         {
-            var buffer = new byte[1024];
-            var stream = client.GetStream();
+            NetworkStream stream = client.GetStream();
+            using StreamReader sr = new(stream);
+            using StreamWriter sw = new(stream);
+            byte[] buffer = new byte[1024];
 
-            while (!token.IsCancellationRequested)
+            int bytesRead = await stream.ReadAsync(buffer);
+            if (bytesRead == 0)
+                return;
+
+            string difficultyStr = Encoding.UTF8.GetString(buffer, 0, bytesRead).Trim();
+
+            if(!Difficulty.TryParse(difficultyStr, out Difficulty? difficulty) || difficulty == null)
             {
-                int bytesRead;
-                try
-                {
-                    bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, token);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-
-                if (bytesRead == 0)
-                {
-                    Console.WriteLine("Client disconnected...");
-                    break;
-                }
-
-                var message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                Console.WriteLine($"Received: {message}");
-
-                var response = Encoding.UTF8.GetBytes("Message received");
-                await stream.WriteAsync(response, 0, response.Length, token);
+                sw.WriteLine("|err|Bad difficulty format");
+                sw.Flush();
+                client.Close();
+                return;
             }
+
+            GameManager gameManager = new(difficulty.Value);
+            int completed = 0;
+            using CancellationTokenSource cts = new(TimeSpan.FromSeconds(GameDurationSeconds));
+
+            while (!cts.IsCancellationRequested)
+            {
+                if(!await gameManager.PlayOnce(sw, sr, cts.Token))
+                {
+                    sw.Write("|incorrect|");
+                    break;
+                }
+                completed++;
+            }
+            if(cts.IsCancellationRequested)
+                sw.Write("|timeout|");
+            
+            double score = Math.Pow(completed, difficulty.Value.ScoreExponent) * difficulty.Value.ScoreMultiplier;
+            sw.WriteLine($"{score}");
+            sw.Flush();
+            client.Close();
         }
     }
 }
