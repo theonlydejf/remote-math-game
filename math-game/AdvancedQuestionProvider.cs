@@ -14,11 +14,11 @@ public class AdvancedQuestionProvider : QuestionProviderBase
         "   {0}{1}{2}",
         "{0}{1} {2}",
         "{0} {1}{2}",
-        "123 {0}{1}{2} 123",
-        "123    {0}{1}   {2} 123",
-        "123 {0}       {1}{2}     123"
+        "123 a {0}{1}{2} a 123",
+        "123 a   {0}{1}   {2} a 123",
+        "123 a {0}       {1}{2} a    123"
     };
-    public AdvancedQuestionProvider() : base(HumanInteractionHelper.AdvancedQuestions, HumanInteractionHelper.AdvancedQuestions, tests, HumanInteractionHelper.ADVANCED_ALPHABET)
+    public AdvancedQuestionProvider() : base(HumanInteractionHelper.AdvancedQuestions, HumanInteractionHelper.AdvancedMessages, tests, HumanInteractionHelper.ADVANCED_ALPHABET)
     {
     }
 

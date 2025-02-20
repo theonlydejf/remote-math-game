@@ -1,5 +1,6 @@
 internal static class RandomStringHelper
 {
+    private static string chars = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM;:";
     private static Random rnd = new();
     public static string GetRandomString(string allowedChars, int length)
     {
@@ -7,11 +8,11 @@ internal static class RandomStringHelper
             throw new ArgumentException("allowedChars cannot be null or empty.", nameof(allowedChars));
 
         
-        return new string(
+        return chars[rnd.Next(chars.Length)] + new string(
             Enumerable.Range(0, length)
-                      .Select(_ => allowedChars[rnd.Next(allowedChars.Length)])
+                      .Select(_ => allowedChars[rnd.Next(allowedChars.Length - 2)])
                       .ToArray()
-        );
+        ) + chars[rnd.Next(chars.Length)];
     }
 
     public static string GetVariableFormat(int cnt, double complexityExp)

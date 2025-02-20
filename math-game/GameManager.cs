@@ -1,4 +1,5 @@
 
+using System.Globalization;
 using System.Reflection.Metadata;
 using System.Text;
 
@@ -24,11 +25,12 @@ public class GameManager
 
     private string num2str(double x)
     {
+        string baseStr = x.ToString(CultureInfo.InvariantCulture);
         // Small chance to add '+' to the start of x if allowed
         if(!difficulty.AllowSigns || x < 0 || rnd.Next(3) != 0)
-            return x.ToString();
+            return baseStr;
         
-        return "+" + x.ToString();
+        return "+" + baseStr;
     }
 
     private EquationParams GetSimpleEquationParams()
@@ -115,7 +117,6 @@ public class GameManager
         string? answerStr = await readValueTask;
         if (answerStr == null || !double.TryParse(answerStr, out double answerDbl))
             return false;
-
         return Math.Abs(answerDbl - eqParams.Result) < 1e-9;
     }
 }

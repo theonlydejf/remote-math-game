@@ -1,6 +1,6 @@
 public abstract class QuestionProviderBase : IQuestionProvider
 {
-    public const double COMPLEXITY_EXP_MIN = 1.3;
+    public const double COMPLEXITY_EXP_MIN = 1.8;
     public const double COMPLEXITY_EXP_MAX = 2;
 
     public int Count { get; private set; } = 0;

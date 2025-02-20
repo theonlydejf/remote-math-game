@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 public enum ParserDifficulty { EASY, MEDIUM, HARD, ADVANCED }
@@ -66,42 +68,70 @@ public struct Difficulty
 public static class MathTest
 {
     private static TcpClient? client;
-    public static StreamReader? reader { get; private set; }
-    public static StreamWriter? writer { get; private set; }
+    private static string? lastLine;
+    public static StreamReader? Reader { get; private set; }
+    public static string Status { get; private set; } = "not finished yet";
+    public static double Score { get; private set; } = -1;
+    public static StreamWriter? Writer { get; private set; }
+    public static bool IsTestRunning { get; private set; } = false;
 
-    public static void Connect(string serverIP, int port, Difficulty difficulty)
+    public static void Connect(string serverIP, int port, Difficulty difficulty, string username)
     {
+        if(client != null)
+            throw new InvalidOperationException("You can only connect once per session");
         client = new TcpClient();
         client.Connect(serverIP, port);
-        writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
-        reader = new StreamReader(client.GetStream());
-        writer.WriteLine(difficulty.ToString());
+        Writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
+        Reader = new StreamReader(client.GetStream());
+        Writer.WriteLine(difficulty.ToString());
+        Thread.Sleep(100);
+        Writer.WriteLine(username);
+        IsTestRunning = true;
     }
 
     public static string? ReadLine()
     {
-        return reader?.ReadLine();
+        if(Reader == null)
+            throw new InvalidOperationException("Test not connected");
+        
+        if(!IsTestRunning)
+            return null;
+
+        string? curr = Reader.ReadLine();
+        if(curr != null)
+            lastLine = curr;
+        else
+            return null;
+
+        if(curr.Contains('|'))
+        {
+            IsTestRunning = false;
+            ProcessStatus();
+            return null;
+        }
+        return curr;
     }
 
     public static void WriteLine(string value)
     {
-        writer?.WriteLine(value);
-        writer?.Flush();
+        if(Writer == null)
+            throw new InvalidOperationException("Test not connected");
+        Writer.WriteLine(value);
+        Writer.Flush();
     }
 
     public static void PlayOnConsole()
     {
-        if(reader == null || writer == null)
+        if(Reader == null || Writer == null)
             throw new InvalidOperationException("Not connected to math test");
 
         bool connected = true;
 
         _ = Task.Run(async () =>
         {
-            string? statusLine = null;
             while (true)
             {
-                string? response = await reader.ReadLineAsync();
+                string? response = await Reader.ReadLineAsync();
                 if (response == null)
                 {
                     connected = false;
@@ -110,25 +140,26 @@ public static class MathTest
                 if(!response.Contains('|'))
                     Console.WriteLine(response);
                 else
-                    statusLine = response;
+                    lastLine = response;
             }
+            IsTestRunning = false;
             Console.ForegroundColor = ConsoleColor.Yellow;
-            if(statusLine == null)
+            if(lastLine == null)
                 Console.WriteLine("No status received.");
             else
             {
-                string[] status = statusLine.Split('|', StringSplitOptions.RemoveEmptyEntries);
-                switch (status[^2])
+                ProcessStatus();
+                switch (Status)
                 {
                     case "err":
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Fatal error: " + status[^1]);
+                        Console.WriteLine($"Fatal error: {Score:0.00}");
                         break;
                     case "incorrect":
-                        Console.WriteLine("Your answer was incorrect. Score: " + status[^1]);
+                        Console.WriteLine($"Your answer was incorrect. Score: {Score:0.00}");
                         break;
                     case "timeout":
-                        Console.WriteLine("Time is out. Score: " + status[^1]);
+                        Console.WriteLine($"Time is out. Score: {Score:0.00}");
                         break;
                     default:
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -146,8 +177,26 @@ public static class MathTest
             string? input = Console.ReadLine();
             if (input == null)
                 break;
-            writer.WriteLine(input);
+            Writer.WriteLine(input);
         }
+    }
+
+    private static void ProcessStatus()
+    {
+        if(lastLine == null)
+        {
+            Status = "invalid";
+            return;
+        }
+        string[] status = lastLine.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        if(!double.TryParse(status[status.Length - 1], out double score))
+        {
+            Status = "invalid score";
+            Score = -1;
+            return;
+        }
+        Score = score;
+        Status = status[status.Length - 2];
     }
 }
 
@@ -155,7 +204,41 @@ class Program
 {
     static void Main(string[] args)
     {
-        MathTest.Connect("localhost", 12345, new Difficulty(false, false, ParserDifficulty.EASY));
-        MathTest.PlayOnConsole();
+        MathTest.Connect("localhost", 12345, new Difficulty(true, true, ParserDifficulty.ADVANCED), "david");
+        string pattern = "([+-]?\\d+([.,]\\d+)?)\\s*([\\+\\-\\*\\/])\\s*([+-]?\\d+([.,]\\d+)?)";
+
+        Console.WriteLine("Working...");
+        while(MathTest.IsTestRunning)
+        {
+            string? str = MathTest.ReadLine();
+            if(str == null)
+                continue;
+            
+            Match match = Regex.Match(str, pattern);
+
+            if (match.Success)
+            {
+                double firstNumber = Convert.ToDouble(match.Groups[1].Value);
+                string operation = match.Groups[3].Value;
+                double secondNumber = Convert.ToDouble(match.Groups[4].Value);
+
+                switch (operation)
+                {
+                    case "+":
+                        MathTest.WriteLine((firstNumber + secondNumber).ToString());
+                        break;
+                    case "-":
+                        MathTest.WriteLine((firstNumber - secondNumber).ToString());
+                        break;
+                    case "*":
+                        MathTest.WriteLine((firstNumber * secondNumber).ToString());
+                        break;
+                    case "/":
+                        MathTest.WriteLine((firstNumber / secondNumber).ToString());
+                        break;
+                }
+            }
+        }
+        Console.WriteLine(MathTest.Status);
     }
 }
