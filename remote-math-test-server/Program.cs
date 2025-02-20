@@ -56,20 +56,25 @@ class Program
             int completed = 0;
             using CancellationTokenSource cts = new(TimeSpan.FromSeconds(GameDurationSeconds));
 
-            while (!cts.IsCancellationRequested)
+            try
             {
-                if(!await gameManager.PlayOnce(sw, sr, cts.Token))
+                while (!cts.IsCancellationRequested)
                 {
-                    sw.Write("|incorrect|");
-                    break;
+                    if (!await gameManager.PlayOnce(sw, sr, cts.Token))
+                    {
+                        sw.Write("|incorrect|");
+                        break;
+                    }
+                    completed++;
                 }
-                completed++;
             }
+            catch (OperationCanceledException) {}
             if(cts.IsCancellationRequested)
                 sw.Write("|timeout|");
             
             double score = Math.Pow(completed, difficulty.Value.ScoreExponent) * difficulty.Value.ScoreMultiplier;
-            sw.WriteLine($"{score}");
+            sw.WriteLine(score.ToString("0.00"));
+            Console.WriteLine("Final score: " + score.ToString("0.00"));
             sw.Flush();
             client.Close();
         }
