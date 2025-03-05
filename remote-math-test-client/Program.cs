@@ -8,10 +8,11 @@ using System.Threading.Tasks;
 
 public enum ParserDifficulty { EASY, MEDIUM, HARD, ADVANCED }
 
+/// <summary>
+/// Defines difficulty of the current session of the Math Test
+/// </summary>
 public struct Difficulty
 {
-    public double ScoreExponent { get; }
-    public double ScoreMultiplier { get; }
 
     public bool AllowSigns { get; }
     public bool AllowMessages { get; }
@@ -24,24 +25,7 @@ public struct Difficulty
         ParserDifficulty = parserDifficulty;
     }
 
-    public static bool TryParse(string str, out Difficulty? difficulty)
-    {
-        difficulty = null;
-        string[] modeIDs = str.ToLower().Split(';');
-        if(modeIDs.Length != 3)
-            return false;
-
-        bool allowSigns = modeIDs[0].StartsWith('t');
-        bool allowMessages = modeIDs[1].StartsWith('t');
-        bool validParserDifficulty = Enum.TryParse(modeIDs[2].ToUpper(), out ParserDifficulty parserDifficulty);
-        if(!validParserDifficulty)
-            return false;
-        
-        difficulty = new(allowSigns, allowMessages, parserDifficulty);
-        return true;
-    }
-
-    public override string ToString()
+    public override readonly string ToString()
     {
         return $"{AllowSigns};{AllowMessages};{ParserDifficulty}";
     }
@@ -54,6 +38,7 @@ public static class MathTest
     public static StreamReader? Reader { get; private set; }
     public static string Status { get; private set; } = "not finished yet";
     public static double Score { get; private set; } = -1;
+    public static string? StatusParamRaw { get; private set; } = null;
     public static StreamWriter? Writer { get; private set; }
     public static bool IsTestRunning { get; private set; } = false;
 
@@ -61,13 +46,19 @@ public static class MathTest
     {
         if(client != null)
             throw new InvalidOperationException("You can only connect once per session");
+
+        // Connect to the server
         client = new TcpClient();
         client.Connect(serverIP, port);
+
         Writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
         Reader = new StreamReader(client.GetStream());
+
+        // Send settings
         Writer.WriteLine(difficulty.ToString());
         Thread.Sleep(100);
         Writer.WriteLine(username);
+
         IsTestRunning = true;
     }
 
@@ -85,7 +76,8 @@ public static class MathTest
         else
             return null;
 
-        if(curr.Contains('|'))
+        // Check if command sequence was received
+        if(curr.Contains("&|"))
         {
             IsTestRunning = false;
             ProcessStatus();
@@ -109,6 +101,8 @@ public static class MathTest
 
         bool connected = true;
 
+        // Receiver Thread - Listens for messeges from the server and redirects them
+        //                   to the console standart output
         _ = Task.Run(async () =>
         {
             while (true)
@@ -119,11 +113,14 @@ public static class MathTest
                     connected = false;
                     break;
                 }
-                if(!response.Contains('|'))
+
+                if(!response.Contains("&|")) // If not status command
                     Console.WriteLine(response);
                 else
                     lastLine = response;
             }
+
+            // Print results
             IsTestRunning = false;
             Console.ForegroundColor = ConsoleColor.Yellow;
             if(lastLine == null)
@@ -135,7 +132,7 @@ public static class MathTest
                 {
                     case "err":
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Fatal error: {Score:0.00}");
+                        Console.WriteLine($"Fatal error: {StatusParamRaw}");
                         break;
                     case "incorrect":
                         Console.WriteLine($"Your answer was incorrect. Score: {Score:0.00}");
@@ -145,7 +142,7 @@ public static class MathTest
                         break;
                     default:
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("Fatal error: Unknown status");
+                        Console.WriteLine($"Fatal error: Unknown status: '{Status}', received param: {StatusParamRaw}");
                         break;
                 }
                 Console.ForegroundColor = ConsoleColor.Yellow;
@@ -154,6 +151,7 @@ public static class MathTest
             Console.WriteLine("Press enter to exit...");
         });
 
+        // Listen for the user input and send it to the server
         while (connected)
         {
             string? input = Console.ReadLine();
@@ -165,18 +163,30 @@ public static class MathTest
 
     private static void ProcessStatus()
     {
+        // No status command was received
         if(lastLine == null)
         {
             Status = "invalid";
             return;
         }
+        
+        // Parse the results
         string[] status = lastLine.Split('|', StringSplitOptions.RemoveEmptyEntries);
-        if(!double.TryParse(status[status.Length - 1], out double score))
+        if(status.Length < 2)
+        {
+            Status = "err";
+            StatusParamRaw = "Invalid status command received";
+            return;
+        }
+
+        StatusParamRaw = status[status.Length - 1];
+        if(!double.TryParse(StatusParamRaw, out double score))
         {
             Status = "invalid score";
             Score = -1;
             return;
         }
+
         Score = score;
         Status = status[status.Length - 2];
     }
@@ -187,7 +197,7 @@ class Program
     static void Main(string[] args)
     {
         string username = "unnamed"; // Your username
-        string ipAddress = "X.X.X.X"; // IP Address of the server
+        string ipAddress = "localhost"; // IP Address of the server
         int port = 12345; // Port on which the server is running
         Difficulty difficulty = new Difficulty // Difficulty of the test
         (
@@ -195,6 +205,9 @@ class Program
             false, // Allow messages?
             ParserDifficulty.EASY // Equiation format difficulty level
         );
+        
         MathTest.Connect(ipAddress, port, difficulty, username);
+
+        /* Your code here */
     }
 }

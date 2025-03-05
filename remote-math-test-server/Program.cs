@@ -41,7 +41,7 @@ class Program
 
             if(!Difficulty.TryParse(difficultyStr, out Difficulty? difficulty) || difficulty == null)
             {
-                sw.WriteLine("|err|Bad difficulty format");
+                sw.WriteLine("&|err|Bad difficulty format");
                 sw.Flush();
                 client.Close();
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -53,7 +53,7 @@ class Program
             string? username = await sr.ReadLineAsync();
             if(username == null)
             {
-                sw.WriteLine("|err|Invalid or no username");
+                sw.WriteLine("&&|err|Invalid or no username");
                 sw.Flush();
                 client.Close();
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -74,7 +74,7 @@ class Program
                 {
                     if (!await gameManager.PlayOnce(sw, sr, cts.Token))
                     {
-                        sw.Write("|incorrect|");
+                        sw.Write("$&|incorrect|");
                         break;
                     }
                     completed++;
@@ -82,7 +82,7 @@ class Program
             }
             catch (OperationCanceledException) {}
             if(cts.IsCancellationRequested)
-                sw.Write("|timeout|");
+                sw.Write("$&|timeout|");
             
             double score = Math.Pow(completed, difficulty.Value.ScoreExponent) * difficulty.Value.ScoreMultiplier;
             sw.WriteLine(score.ToString("0.00"));
