@@ -30,7 +30,12 @@ class Program
 
     private static async Task HandleClientAsync(TcpClient client)
     {
-        Console.Write($"Client connected on {((IPEndPoint)client.Client.RemoteEndPoint).Address}");
+        var remoteEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+        if (remoteEndPoint != null)
+            Console.Write($"Client connected on {remoteEndPoint.Address}");
+        else
+            Console.Write("Client connected on unknown address");
+
         using (client)
         {
             NetworkStream stream = client.GetStream();
