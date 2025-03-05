@@ -14,7 +14,7 @@ public struct Difficulty
         { ParserDifficulty.EASY, 1 },
         { ParserDifficulty.MEDIUM, 3 },
         { ParserDifficulty.HARD, 6 },
-        { ParserDifficulty.ADVANCED, 12 }
+        { ParserDifficulty.ADVANCED, 24 }
     };
 
     private const double SIGNS_SCORE_MUL = 2;

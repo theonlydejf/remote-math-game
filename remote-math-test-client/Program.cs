@@ -10,17 +10,6 @@ public enum ParserDifficulty { EASY, MEDIUM, HARD, ADVANCED }
 
 public struct Difficulty
 {
-    private static Dictionary<ParserDifficulty, double> parser2expMap = new()
-    {
-        { ParserDifficulty.EASY, 1 },
-        { ParserDifficulty.MEDIUM, 1.5 },
-        { ParserDifficulty.HARD, 2 },
-        { ParserDifficulty.ADVANCED, 3 }
-    };
-
-    private const double SIGNS_SCORE_MUL = 2;
-    private const double MSG_SCORE_MUL = 3;
-
     public double ScoreExponent { get; }
     public double ScoreMultiplier { get; }
 
@@ -33,13 +22,6 @@ public struct Difficulty
         AllowSigns = allowSigns;
         AllowMessages = allowMessages;
         ParserDifficulty = parserDifficulty;
-
-        ScoreExponent = parser2expMap[parserDifficulty];
-        ScoreMultiplier = 1;
-        if(AllowSigns)
-            ScoreExponent *= SIGNS_SCORE_MUL;
-        if(AllowMessages)
-            ScoreExponent *= MSG_SCORE_MUL;
     }
 
     public static bool TryParse(string str, out Difficulty? difficulty)
@@ -204,41 +186,15 @@ class Program
 {
     static void Main(string[] args)
     {
-        MathTest.Connect("localhost", 12345, new Difficulty(true, true, ParserDifficulty.ADVANCED), "david");
-        string pattern = "([+-]?\\d+([.,]\\d+)?)\\s*([\\+\\-\\*\\/])\\s*([+-]?\\d+([.,]\\d+)?)";
-
-        Console.WriteLine("Working...");
-        while(MathTest.IsTestRunning)
-        {
-            string? str = MathTest.ReadLine();
-            if(str == null)
-                continue;
-            
-            Match match = Regex.Match(str, pattern);
-
-            if (match.Success)
-            {
-                double firstNumber = Convert.ToDouble(match.Groups[1].Value);
-                string operation = match.Groups[3].Value;
-                double secondNumber = Convert.ToDouble(match.Groups[4].Value);
-
-                switch (operation)
-                {
-                    case "+":
-                        MathTest.WriteLine((firstNumber + secondNumber).ToString());
-                        break;
-                    case "-":
-                        MathTest.WriteLine((firstNumber - secondNumber).ToString());
-                        break;
-                    case "*":
-                        MathTest.WriteLine((firstNumber * secondNumber).ToString());
-                        break;
-                    case "/":
-                        MathTest.WriteLine((firstNumber / secondNumber).ToString());
-                        break;
-                }
-            }
-        }
-        Console.WriteLine(MathTest.Status);
+        string username = "unnamed"; // Your username
+        string ipAddress = "X.X.X.X"; // IP Address of the server
+        int port = 12345; // Port on which the server is running
+        Difficulty difficulty = new Difficulty // Difficulty of the test
+        (
+            false, // Allow signs?
+            false, // Allow messages?
+            ParserDifficulty.EASY // Equiation format difficulty level
+        );
+        MathTest.Connect(ipAddress, port, difficulty, username);
     }
 }

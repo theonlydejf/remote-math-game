@@ -13,6 +13,7 @@ public class EasyQuestionProvider : IQuestionProvider
 
     public string GetQuestion(string numberA, string numberB, string op)
     {
+        Thread.Sleep(200);
         Count++;
         return $"{numberA} {op} {numberB}";
     }
