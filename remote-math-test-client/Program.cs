@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -196,18 +197,56 @@ class Program
 {
     static void Main(string[] args)
     {
-        string username = "unnamed"; // Your username
-        string ipAddress = "localhost"; // IP Address of the server
+        string username = "Velky David"; // Your username
+        string ipAddress = "192.168.1.26"; // IP Address of the server
         int port = 12345; // Port on which the server is running
         Difficulty difficulty = new Difficulty // Difficulty of the test
         (
-            false, // Allow signs?
-            false, // Allow messages?
-            ParserDifficulty.EASY // Equiation format difficulty level
+            true, // Allow signs?
+            true, // Allow messages?
+            ParserDifficulty.ADVANCED // Equiation format difficulty level
         );
         
         MathTest.Connect(ipAddress, port, difficulty, username);
 
-        /* Your code here */
+        string pattern = "([+-]?\\d+([.,]\\d+)?)\\s*([\\+\\-\\*\\/])\\s*([+-]?\\d+([.,]\\d+)?)";
+
+        Console.WriteLine("Working...");
+        string? last = null;
+        while(MathTest.IsTestRunning)
+        {
+            string? str = MathTest.ReadLine();
+            if(str == null)
+                continue;
+            last = str;
+            
+            Match match = Regex.Match(str, pattern);
+
+            if (match.Success)
+            {
+                double firstNumber = Convert.ToDouble(match.Groups[1].Value.Replace('.', ','));
+                string operation = match.Groups[3].Value;
+                double secondNumber = Convert.ToDouble(match.Groups[4].Value.Replace('.', ','));
+
+                switch (operation)
+                {
+                    case "+":
+                        string x = (firstNumber + secondNumber).ToString().Replace('.', ',');
+                        MathTest.WriteLine(x);
+                        break;
+                    case "-":
+                        MathTest.WriteLine((firstNumber - secondNumber).ToString().Replace('.', ','));
+                        break;
+                    case "*":
+                        MathTest.WriteLine((firstNumber * secondNumber).ToString().Replace('.', ','));
+                        break;
+                    case "/":
+                        MathTest.WriteLine((firstNumber / secondNumber).ToString().Replace('.', ','));
+                        break;
+                }
+            }
+        }
+        Console.WriteLine("last: " + (last ?? "null"));
+        Console.WriteLine(MathTest.Status);
     }
 }
