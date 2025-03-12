@@ -12,13 +12,13 @@ public struct Difficulty
     private static Dictionary<ParserDifficulty, double> parser2mulMap = new()
     {
         { ParserDifficulty.EASY, 1 },
-        { ParserDifficulty.MEDIUM, 3 },
-        { ParserDifficulty.HARD, 6 },
-        { ParserDifficulty.ADVANCED, 24 }
+        { ParserDifficulty.MEDIUM, 2.5 },
+        { ParserDifficulty.HARD, 5 },
+        { ParserDifficulty.ADVANCED, 12 }
     };
 
-    private const double SIGNS_SCORE_MUL = 2;
-    private const double MSG_SCORE_MUL = 3;
+    private const double SIGNS_SCORE_MUL = 15;
+    private const double MSG_SCORE_MUL = 25;
 
     public double ScoreExponent { get; } = 1;
     public double ScoreMultiplier { get; } = 1;
@@ -36,9 +36,9 @@ public struct Difficulty
         ScoreExponent = parser2expMap[parserDifficulty];
         ScoreMultiplier *= parser2mulMap[parserDifficulty];
         if(AllowSigns)
-            ScoreExponent *= SIGNS_SCORE_MUL;
+            ScoreMultiplier *= SIGNS_SCORE_MUL;
         if(AllowMessages)
-            ScoreExponent *= MSG_SCORE_MUL;
+            ScoreMultiplier *= MSG_SCORE_MUL;
     }
 
     public static bool TryParse(string? str, out Difficulty? difficulty)

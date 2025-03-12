@@ -51,7 +51,7 @@ public class GameManager
                 return new(num2str(a), num2str(b), a*b, "*");
             case 3: // Div
                 a = rnd.Next(10 * minMul, 11);
-                if(rnd.Next(2) == 0)
+                if(!difficulty.AllowSigns || rnd.Next(2) == 0)
                     b = rnd.Next(1, 11);
                 else
                     b = rnd.Next(-10, 0);
@@ -60,6 +60,35 @@ public class GameManager
                 throw new InvalidOperationException("Unexpected operation type");
         }
     }
+
+    private EquationParams GetHarderEquationParams()
+    {
+        int minMul = difficulty.AllowSigns ? -1 : 0;
+        double a = rnd.Next(1000 * minMul, 1000);
+        double b = rnd.Next(1000 * minMul, 1000);
+
+        switch (rnd.Next(4))
+        {
+            case 0: // Add
+                return new(num2str(a / 10.0), num2str(b / 10.0), (a / 10.0) + (b / 10.0), "+");
+            case 1: // Sub
+                return new(num2str(a / 10.0), num2str(b / 10.0), (a / 10.0) - (b / 10.0), "-");
+            case 2: // Mul
+                a = rnd.Next(200 * minMul, 210);
+                b = rnd.Next(200 * minMul, 210);
+                return new(num2str(a / 10.0), num2str(b / 10.0), (a / 10.0) * (b / 10.0), "*");
+            case 3: // Div
+                a = rnd.Next(10 * minMul, 11);
+                if(!difficulty.AllowSigns || rnd.Next(2) == 0)
+                    b = rnd.Next(1, 11);
+                else
+                    b = rnd.Next(-10, 0);
+                return new(num2str(a * b), num2str(b), a, "/");
+            default:
+                throw new InvalidOperationException("Unexpected operation type");
+        }
+    }
+
     private EquationParams GetComputerEquationParams()
     {
         const int MAX_VALUE = 99999999;
@@ -97,10 +126,12 @@ public class GameManager
 
         // Create equation values
         EquationParams eqParams;
-        if(questionProvider.Count > HumanInteractionHelper.HUMAN_QUESTION_CNT)
-            eqParams = GetComputerEquationParams();
-        else
+        if(questionProvider.Count < HumanInteractionHelper.HUMAN_QUESTION_CNT / 2)
             eqParams = GetSimpleEquationParams();
+        else if(questionProvider.Count < HumanInteractionHelper.HUMAN_QUESTION_CNT)
+            eqParams = GetHarderEquationParams();
+        else
+            eqParams = GetComputerEquationParams();
 
         // Send question
         await sw.WriteLineAsync(questionProvider.GetQuestion(eqParams.NumberA, eqParams.NumberB, eqParams.Operator));
