@@ -146,8 +146,9 @@ public class GameManager
         
         // Check answer corectness
         string? answerStr = await readValueTask;
-        if (answerStr == null || !double.TryParse(answerStr, out double answerDbl))
+        if (answerStr == null || !double.TryParse(answerStr.Replace(',', '.'), CultureInfo.InvariantCulture, out double answerDbl))
             return false;
+        
         return Math.Abs(answerDbl - eqParams.Result) < 1e-9;
     }
 }

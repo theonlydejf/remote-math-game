@@ -17,8 +17,8 @@ public struct Difficulty
         { ParserDifficulty.ADVANCED, 12 }
     };
 
-    private const double SIGNS_SCORE_MUL = 15;
-    private const double MSG_SCORE_MUL = 25;
+    private const double SIGNS_SCORE_MUL = 1.5;
+    private const double MSG_SCORE_MUL = 2.5;
 
     public double ScoreExponent { get; } = 1;
     public double ScoreMultiplier { get; } = 1;
